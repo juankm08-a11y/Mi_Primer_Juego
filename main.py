@@ -10,33 +10,64 @@ from elementos.elementos import (
     dibujar_powerups
 )
 
+def seleccionar_personaje():
+    font = pygame.font.SysFont(None,48)
+    prompt = font.render("1-Axel     2-Dante",True,(255,255,255))
+    img1 = pygame.transform.scale(
+        pygame.image.load("assets/personaje1.png"),(80,80)
+    )
+    img2 = pygame.transform.scale(
+        pygame.image.load("assets/personaje.png"),(80,80)
+    )
+    
+    while True:
+        VENTANA.fill((20,20,20))
+        VENTANA.blit(
+            prompt,
+            (ANCHO//2-prompt.get_width()//2, ALTO//4)
+        )
+        VENTANA.blit(img1,(ANCHO//3-40,ALTO//2-ALTO))
+        VENTANA.blit(img2,(2*ANCHO//3-40,ALTO//2-ALTO))
+        pygame.display.flip()
+        
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_1:
+                    return {
+                        "nombre":"Axel",
+                        "sprite":"assets/personaje1.png",
+                        "controles":{
+                            'izq':pygame.K_a,
+                            'der':pygame.K_d,
+                            'arr':pygame.K_w,
+                            'aba':pygame.K_s,
+                        }
+                    }
+                if e.key == pygame.K_2:
+                    return {
+                        "nombre":"Dante",
+                        "sprite":"assets/personaje2.png",
+                        "controles":{
+                            'izq':pygame.K_LEFT,
+                            'der':pygame.K_RIGHT,
+                            'arr':pygame.K_UP,
+                            'aba':pygame.K_DOWN,
+                        }
+                    }
+
 def main():
+    elec = seleccionar_personaje()
     nivel_actual = 0 
     
-    axel = Personaje(
-        "Axel",
-        "assets/personaje1.png",
+    jugador = Personaje(
+        elec["nombre"],
+        elec["sprite"],
         generar_pos_jugador(),
-        {
-           'izq':pygame.K_a,
-           'der':pygame.K_d,
-           'arr':pygame.K_w,
-           'aba':pygame.K_s 
-        }
+        elec["controles"]
     )
-    
-    dante = Personaje(
-        "Dante",
-        "assets/personaje2.png",
-        generar_pos_jugador(),
-        {
-           'izq':pygame.K_LEFT,
-           'der':pygame.K_RIGHT,
-           'arr':pygame.K_UP,
-           'aba':pygame.K_DOWN
-        }
-    )
-    
     while True:
         dt = RELOJ.tick(FPS) / 1000.0 
         
@@ -45,42 +76,28 @@ def main():
                 pygame.quit()
                 sys.exit()
             
-            if evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_RETURN:
-                    nivel_actual = siguiente_nivel(nivel_actual)
-                    axel = Personaje(
-                        "Axel",
-                        "assets/personaje1.png",
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_RETURN:
+                nivel_actual = siguiente_nivel(nivel_actual)
+                jugador = Personaje(
+                        elec["nombre"],
+                        elec["sprite"],
                         generar_pos_jugador(),
-                        axel.controles
-                    )
-                    dante = Personaje(
-                        "Dante",
-                        "assets/personaje2.png",
-                        generar_pos_jugador(),
-                        dante.controles
-                    )
-                    print(f"Cambiando a nivel {nivel_actual}: {obtener_nombre_nivel(nivel_actual)}")
+                        elec["controles"]
+                )
+                  
                 
         teclas = pygame.key.get_pressed()
-        axel.actualizar(dt,teclas)
-        dante.actualizar(dt,teclas)
-
-        for personaje in [axel,dante]:
-            if personaje.rect.colliderect(META_RECT):
-                nivel_actual = siguiente_nivel(nivel_actual)
-                axel = Personaje(
-                    "Axel",
-                    "assets/personaje1.png",
-                    generar_pos_jugador(),
-                    axel.controles
-                )
-                dante = Personaje(
-                    "Dante",
-                    "assets/personaje2.png",
-                    generar_pos_jugador(),
-                    dante.controles)
-                print(f"!{personaje.nombre} alcanzó la meta! Cambiando a nivel{nivel_actual}:{obtener_nombre_nivel(nivel_actual)}")
+        jugador.update(dt,teclas)
+        
+        if jugador.rect.colliderect(META_RECT):
+            nivel_actual = siguiente_nivel(nivel_actual)
+            print(f"¡{jugador.nombre} alcanzalo la meta y paso al nivel {nivel_actual}:{obtener_nombre_nivel(nivel_actual)}")
+            jugador = Personaje(
+                        elec["nombre"],
+                        elec["sprite"],
+                        generar_pos_jugador(),
+                        elec["controles"]
+            )
         
         VENTANA.fill(obtener_color_nivel(nivel_actual))
         
@@ -90,8 +107,7 @@ def main():
         dibujar_enemigos(VENTANA)
         dibujar_powerups(VENTANA)
                           
-        axel.dibujar(VENTANA)
-        dante.dibujar(VENTANA)
+        jugador.dibujar(VENTANA)
         
         font = pygame.font.SysFont(None, 36)
         texto_nivel = font.render(
